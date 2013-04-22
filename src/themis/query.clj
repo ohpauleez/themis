@@ -1,5 +1,27 @@
 (ns themis.query)
 
+;; Themis Validation queries
+;; --------------------------
+;;
+;; ### Structure
+;; The query is specifically just data that gets ingested into
+;; some validation engine.  This has a few key benefits like
+;; composability and packaging/serializing.
+;;
+;; A query is a vector of vector pairs.
+;; In its short form:
+;; `[[:coordinate validation-fn]]`
+;;
+;; In its long form:
+;; `[[[:coordinate] [vaildation-fn]]`
+;;
+;; The query vectory pair is some coordinate into the data structure you're
+;; validation, and the validation function that should be applied at that
+;; location.
+;; Care has been taken to make it work well with hash maps, but it should
+;; work equally well with other data structures - the engine is open for
+;; modification.
+
 (defn balanced?
   "Ensure that every key/map selection
   is paired to some validation symbol/keyword/vec"
