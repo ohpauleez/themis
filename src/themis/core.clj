@@ -55,15 +55,15 @@
          {}))
 
   (def valid-paul [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
-                                                                       {:a 1 :b 2}))]]
+                                                                        {:a 1 :b 2}))]]
                    [[:pets 0 0] [::w-pets {:pet-name-starts ""}]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
-  (def normal-paul (query/normalize valid-paul))
-  (validation-seq paul normal-paul)
-  (validation paul normal-paul)
-  (validation paul normal-paul identity)
+  (def paul-rules (query/normalize valid-paul))
+  (validation-seq paul paul-rules)
+  (validation paul paul-rules)
+  (validation paul paul-rules identity)
 
 )
 
