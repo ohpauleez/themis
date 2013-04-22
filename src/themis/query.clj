@@ -23,14 +23,14 @@
 (defn- normalize-item
   "Given an element in a validation query, resolve it to a function"
   ([validation-item]
-   (normalize-item validation-item #(throw (Exception. "Validation items must be symbols, keywords, strings, or functions"))))
+   (normalize-item validation-item #(throw (Exception. (str "Validation items must be symbols, keywords, strings, or functions. Not: " (type %))))))
   ([validation-item else-fn]
   (cond
     (symbol? validation-item) @(resolve validation-item)
     (keyword? validation-item) @(resolve (symbol (nsed-name validation-item)))
     (string? validation-item) @(resolve (symbol validation-item))
     (instance? clojure.lang.IFn validation-item) validation-item
-    :else (else-fn))))
+    :else (else-fn validation-item))))
 
 (defn normalize-validation-fns
   "Given the validation function vectors,
@@ -63,10 +63,10 @@
                     [:alpha [valid? {:another-opt true}]]])
   (def short-query [[:foo valid?]])
 
-  (balanced? (normalize-query-structure valid-query))
+  (balanced? (normalize valid-query))
   (balanced? short-query)
   (balanced? [[:a :b] :c])
-  (normalize-query-structure short-query)
+  (normalize short-query)
  
  ;; Don't enforce what the keys actually have to be;
   ;; leave this here for reference for now 
