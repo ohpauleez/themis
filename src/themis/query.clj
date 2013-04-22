@@ -89,18 +89,9 @@
   (balanced? short-query)
   (balanced? [[:a :b] :c])
   (normalize short-query)
- 
- ;; Don't enforce what the keys actually have to be;
-  ;; leave this here for reference for now 
-  (def ^:dynamic *coordinate-type-set* #{clojure.lang.Keyword clojure.lang.PersistentVector})
-  (every? #(coordinate-type-set (type %)) (take-nth 2 validations-vec))
-  (interleave [0 2 4] [1 3 5])
-  (symbol 'normalize-query-structure)
+
   (symbol (nsed-name ::something))
   (nsed-name "themis.core/normalized-query-structure")
 
-  (symbol count)
-
-  
 )
  
