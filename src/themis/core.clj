@@ -17,16 +17,24 @@
   [coordinate-vec (validation-fn t (navigate t coordinate-vec) opt-map)])
 
 (defn validate-vec
+  "Given a single validation query/rule,
+  pull apart the constituents and apply a `raw-validation`,
+  returning back the validation result vector"
   [t validation-vec]
   (let [[coordinates validations] validation-vec
         [validation-fn opt-map] validations
         opt-map (or opt-map {})]
     (raw-validation t coordinates validation-fn opt-map)))
 
-(defn validation-seq [t normalized-query]
+(defn validation-seq
+  "Create a lazy sequence of validating a given data structure
+  against the a normalized validation query vector/seq"
+  [t normalized-query]
   (map #(validate-vec t %) normalized-query))
 
 (defn validation
+  "Validate a data structure, `t`,
+  against a normalized validation query/rule-set"
   ([t normalized-query]
    ;; For some reason `doall` doesn't work here
    (apply hash-map (into [] (mapcat identity (validation-seq t normalized-query)))))
