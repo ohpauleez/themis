@@ -16,7 +16,7 @@
 ;; `[[[:coordinate] [vaildation-fn]]`
 ;;
 ;; The query vectory pair is some coordinate into the data structure you're
-;; validation, and the validation function that should be applied at that
+;; validating, and the validation function that should be applied at that
 ;; location.
 ;; Care has been taken to make it work well with hash maps, but it should
 ;; work equally well with other data structures - the engine is open for
