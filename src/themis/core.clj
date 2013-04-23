@@ -79,7 +79,7 @@
   in a vector."
   ([t normalized-query]
    ;; TODO: This can definitely be done better
-   (apply merge-with #(conj [%1] %2)
+   (apply merge-with #(conj [%1] %2) ;; TODO: this will only work well for 1-2 validation rules, otherwise it'll nest
           (flatten (map (fn [result-seq]
                           (map #(apply hash-map %) (partition-all 2 result-seq)))
                         (validation-seq t normalized-query)))))

@@ -1,5 +1,7 @@
 (ns themis.query)
 
+;; TODO: rename this to `rules`
+
 ;; Themis Validation queries
 ;; --------------------------
 ;;
