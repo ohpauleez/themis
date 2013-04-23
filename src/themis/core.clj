@@ -14,11 +14,13 @@
 ;;    and seq'ing the results together
 ;; 4. Validation is often domain specific, and the library should be open
 ;;    for modification to adapt easily to different requirements
+;; 5. Validation results should not be conj'd/merge'd onto the original data
+;;    (unless the user specifically did that)
 ;;
 ;; ### Assumptions and expectations
 ;;
 ;; Themis attempts to make no assumptions about the data structure you're
-;; validation, the results your validator functions return, or how
+;; validating, the results your validator functions return, or how
 ;; you want to package up the results of a full `validation`.
 ;;
 ;; When assumptions are made, there is always an escape hatch allowing
