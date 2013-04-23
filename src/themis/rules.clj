@@ -1,25 +1,23 @@
-(ns themis.query)
+(ns themis.rules)
 
-;; TODO: rename this to `rules`
-
-;; Themis Validation queries
-;; --------------------------
+;; Themis validation rules
+;; -----------------------
 ;;
 ;; ### Structure
-;; The query is specifically just data that gets ingested into
+;; The rule-set/query is specifically just data that gets ingested into
 ;; some validation engine.  This has a few key benefits like
 ;; composability and packaging/serializing.
 ;;
-;; A query is a vector of vector pairs.
+;; A rule-set is a vector of vector pairs.
 ;; In its short form:
 ;; `[[:coordinate validation-fn]]`
 ;;
 ;; In its long form:
 ;; `[[[:coordinate] [vaildation-fn opt-map]]`
 ;;
-;; The query vectory pair is some coordinate into the data structure you're
+;; The rule vectory pair is some coordinate into the data structure you're
 ;; validating, and the validation function that should be applied at that
-;; location.
+;; location (on that data point).
 ;; Care has been taken to make it work well with hash maps, but it should
 ;; work equally well with other data structures - the engine is open for
 ;; modification.
@@ -28,6 +26,8 @@
 ;; validation function vector as a binding form.  You should always pass in
 ;; an empty map for the options map:
 ;; `[[[:some-key] [one-validator {}, another-validator {}]]]`
+;;
+;; A normalized rule-set is also called a `normalized-query` in code
 
 (defn balanced?
   "Ensure that every key/map selection
@@ -65,7 +65,10 @@
   "Given the validation function vectors,
   normalize them; resolving symbols/keywords to actual functions"
   [validation-fn-vec]
-  (mapv #(normalize-item % identity) validation-fn-vec))
+  (mapv (fn [v-fn]
+           (if (vector? v-fn)
+             [(normalize-item (first v-fn) identity) (or (second v-fn) {})]
+             [(normalize-item v-fn identity) {}])) validation-fn-vec))
 
 (defn- vectorize
   "Properly wrap query items in vectors"
@@ -91,8 +94,8 @@
  
   (def example-map {:foo {:bar [5 6 7]}, :alpha 1})
   (defn valid? [whole-map kw-vec opt-map] {})
-  (def valid-query [[[[:foo] [:foo :bar]] "valid?"]
-                    [:alpha [valid? {:another-opt true}]]])
+  (def valid-query [[[[:foo] [:foo :bar]] ["valid?"]]
+                    [:alpha [[valid? {:another-opt true}]]]])
   (def short-query [[:foo valid?]])
 
   (balanced? (normalize valid-query))

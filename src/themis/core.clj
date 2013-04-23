@@ -1,21 +1,25 @@
 (ns themis.core
   (require [themis.protocols :as protocols]
            [themis.extended-protos :as e-protos]
-           [themis.query :as query]))
+           [themis.rules :as rules]))
 
 ;; Themis
 ;; ---------
 ;;
 ;; ### Why another validation library?
 ;;
-;; 1. The validation rule set should be expressed as data
-;; 2. Validators should always resolve to something that supports IFn
+;; 1. The validation rule set should be expressed as data.
+;;    Rule sets should be able to completely serialize to EDN.
+;; 2. Validators should always resolve to something that supports IFn.
+;;    The resolution of data to IFn-ables happens at validation time.
 ;; 3. Applying validation should be nothing more than applying functions
-;;    and seq'ing the results together
+;;    and seq'ing the results together.
 ;; 4. Validation is often domain specific, and the library should be open
-;;    for modification to adapt easily to different requirements
+;;    for modification to adapt easily to different requirements.
 ;; 5. Validation results should not be conj'd/merge'd onto the original data
-;;    (unless the user specifically did that)
+;;    (unless the user specifically did that).
+;; 6. Validation rule sets should allow for proper namespacing of
+;;    validators (symbols/functions/etc) and general data.
 ;;
 ;; ### Assumptions and expectations
 ;;
@@ -32,13 +36,8 @@
 ;; first wife.  So, I naturally named mine after Zeus' second wife.
 ;;
 ;; ### Ideal usage
+;;
 ;; See the comment block below, but `(validation my-ds ds-rule-vec)`
-
-(defn simple-predicate
-  "Given a simple predicate function that takes a single arg,
-  return a proper validation function for it"
-  [f]
-  (fn [_ data-point _] (f data-point)))
 
 (defn navigate
   "Fetch the data from within a data structure given coordinates.
@@ -57,21 +56,22 @@
   [coordinate-vec (validation-fn t (navigate t coordinate-vec) opt-map)])
 
 (defn validate-vec
-  "Given a single validation query/rule,
+  "Given a single validation rule,
   pull apart the constituents and apply a `raw-validation`,
   returning back the validation result vector"
   [t validation-vec]
   (let [[coordinates validations] validation-vec]
-    (mapcat identity (map (fn [[validation-fn opt-map]]
-                            (raw-validation t coordinates validation-fn (merge {::coordinates coordinates} opt-map)))
-                          (partition-all 2 validations)))))
+    (partition-all 2
+      (mapcat (fn [[validation-fn opt-map]]
+                (raw-validation t coordinates validation-fn (merge {::coordinates coordinates} opt-map)))
+              validations))))
 
 (defn validation-seq
   "Create a lazy sequence of validating a given data structure
-  against the a normalized validation query vector/seq"
+  against the a normalized validation rule-set vector/seq"
   [t normalized-query]
-  (when (query/balanced? normalized-query)
-    (map #(validate-vec t %) normalized-query)))
+  (when (rules/balanced? normalized-query)
+    (mapcat #(validate-vec t %) normalized-query)))
 
 (defn validation
   "Validate a data structure, `t`,
@@ -83,11 +83,11 @@
   ([t rule-set]
    ;; TODO: This can definitely be done better
    (apply merge-with #(flatten (concat [%1] [%2]))
-          (flatten (map (fn [result-seq]
-                          (map #(apply hash-map %) (partition-all 2 result-seq)))
-                        (validation-seq t (query/normalize rule-set))))))
+          (mapcat (fn [result-seq]
+                    (map #(apply hash-map %) (partition-all 2 result-seq)))
+                  (validation-seq t (rules/normalize rule-set)))))
   ([t rule-set merge-fn]
-   (merge-fn (validation-seq t (query/normalize rule-set)))))
+   (merge-fn (validation-seq t (rules/normalize rule-set)))))
 
 (comment
 
@@ -102,16 +102,18 @@
          (:has-pet t-map)
          nil))
 
+  (require '[themis.validators :refer [simple-predicate]])
+
   (def paul-rules [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
-                   [[:pets 0 0] [::w-pets {:pet-name-starts ""}
-                                 (simple-predicate char?) {}
-                                 (simple-predicate #(= % \w))]]
+                   [[:pets 0 0] [[::w-pets {:pet-name-starts ""}]
+                                 (simple-predicate char?)
+                                 (simple-predicate #(= % \w) "The first letter is not `w`")]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
-  (def normal-paul-rules (query/normalize paul-rules))
-  (validation-seq paul normal-paul-rules)
+  (def normal-paul-rules (rules/normalize paul-rules))
+  (type (validation-seq paul normal-paul-rules))
   (validation paul paul-rules)
   (mapcat identity (validation paul paul-rules (partial filter second)))
   (validation paul paul-rules (partial keep second))
