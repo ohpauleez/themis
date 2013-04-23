@@ -58,7 +58,7 @@
   [t validation-vec]
   (let [[coordinates validations] validation-vec]
     (mapcat identity (map (fn [[validation-fn opt-map]]
-                            (raw-validation t coordinatesvalidation-fn (merge {::coordinates coordinates} opt-map)))
+                            (raw-validation t coordinates validation-fn (merge {::coordinates coordinates} opt-map)))
                           (partition-all 2 validations)))))
 
 (defn validation-seq
@@ -98,7 +98,7 @@
   (def valid-paul [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0 0] [::w-pets {:pet-name-starts ""}
-                                 (simple-predicate char?)]]
+                                 (simple-predicate char?) {}]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 

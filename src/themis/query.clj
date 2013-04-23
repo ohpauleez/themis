@@ -13,7 +13,7 @@
 ;; `[[:coordinate validation-fn]]`
 ;;
 ;; In its long form:
-;; `[[[:coordinate] [vaildation-fn]]`
+;; `[[[:coordinate] [vaildation-fn opt-map]]`
 ;;
 ;; The query vectory pair is some coordinate into the data structure you're
 ;; validating, and the validation function that should be applied at that
@@ -21,6 +21,11 @@
 ;; Care has been taken to make it work well with hash maps, but it should
 ;; work equally well with other data structures - the engine is open for
 ;; modification.
+;;
+;; When listing multiple validation functions, it's best to treat the
+;; validation function vector as a binding form.  You should always pass in
+;; an empty map for the options map:
+;; `[[[:some-key] [one-validator {}, another-validator {}]]]`
 
 (defn balanced?
   "Ensure that every key/map selection
