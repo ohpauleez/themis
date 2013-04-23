@@ -113,6 +113,7 @@
   (validation-seq paul normal-paul-rules)
   (validation paul paul-rules)
   (mapcat identity (validation paul paul-rules (partial filter second)))
+  (validation paul paul-rules (partial keep second))
 
 )
 
