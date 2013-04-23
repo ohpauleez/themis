@@ -65,7 +65,8 @@
   "Create a lazy sequence of validating a given data structure
   against the a normalized validation query vector/seq"
   [t normalized-query]
-  (map #(validate-vec t %) normalized-query))
+  (when (query/balanced? normalized-query)
+    (map #(validate-vec t %) normalized-query)))
 
 (defn validation
   "Validate a data structure, `t`,
