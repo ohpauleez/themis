@@ -32,6 +32,12 @@
 ;; ### Ideal usage
 ;; See the comment block below, but `(validation my-ds ds-rule-vec)`
 
+(defn simple-predicate
+  "Given a simple predicate function that takes a single arg,
+  return a proper validation function for it"
+  [f]
+  (fn [_ data-point _] (f data-point)))
+
 (defn navigate
   "Fetch the data from within a data structure given coordinates.
   Note: Tuck our internal protocols behind a function for consumption"
@@ -50,10 +56,10 @@
   pull apart the constituents and apply a `raw-validation`,
   returning back the validation result vector"
   [t validation-vec]
-  (let [[coordinates validations] validation-vec
-        [validation-fn opt-map] validations
-        opt-map (or opt-map {})]
-    (raw-validation t coordinates validation-fn opt-map)))
+  (let [[coordinates validations] validation-vec]
+    (mapcat identity (map (fn [[validation-fn opt-map]]
+                            (raw-validation t coordinatesvalidation-fn (merge {::coordinates coordinates} opt-map)))
+                          (partition-all 2 validations)))))
 
 (defn validation-seq
   "Create a lazy sequence of validating a given data structure
@@ -65,11 +71,14 @@
   "Validate a data structure, `t`,
   against a normalized validation query/rule-set
   Note: By default everything is returned in a map, keyed by
-  the coordinate vector.  It is possible for validation results to be
-  stomped on."
+  the coordinate vector.  Multiple validation results are conj'd together
+  in a vector."
   ([t normalized-query]
-   ;; For some reason `doall` doesn't work here
-   (apply hash-map (into [] (mapcat identity (validation-seq t normalized-query)))))
+   ;; TODO: This can definitely be done better
+   (apply merge-with #(conj [%1] %2)
+          (flatten (map (fn [result-seq]
+                          (map #(apply hash-map %) (partition-all 2 result-seq)))
+                        (validation-seq t normalized-query)))))
   ([t normalized-query merge-fn]
    (merge-fn (validation-seq t normalized-query))))
 
@@ -88,7 +97,8 @@
 
   (def valid-paul [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
-                   [[:pets 0 0] [::w-pets {:pet-name-starts ""}]]
+                   [[:pets 0 0] [::w-pets {:pet-name-starts ""}
+                                 (simple-predicate char?)]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
