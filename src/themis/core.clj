@@ -3,6 +3,35 @@
            [themis.extended-protos :as e-protos]
            [themis.query :as query]))
 
+;; Themis
+;; ---------
+;;
+;; ### Why another validation library?
+;;
+;; 1. The validation rule set should be expressed as data
+;; 2. Validators should always resolve to something that supports IFn
+;; 3. Applying validation should be nothing more than applying functions
+;;    and seq'ing the results together
+;; 4. Validation is often domain specific, and the library should be open
+;;    for modification to adapt easily to different requirements
+;;
+;; ### Assumptions and expectations
+;;
+;; Themis attempts to make no assumptions about the data structure you're
+;; validation, the results your validator functions return, or how
+;; you want to package up the results of a full `validation`.
+;;
+;; When assumptions are made, there is always an escape hatch allowing
+;; you to modify the behavior to better suit your application needs.
+;;
+;; ### Why the name `Themis`?
+;;
+;; I was originally using `metis`, a validation library named after Zeus'
+;; first wife.  So, I naturally named mine after Zeus' second wife.
+;;
+;; ### Ideal usage
+;; See the comment block below, but `(validation my-ds ds-rule-vec)`
+
 (defn navigate
   "Fetch the data from within a data structure given coordinates.
   Note: Tuck our internal protocols behind a function for consumption"
