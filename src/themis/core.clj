@@ -63,7 +63,10 @@
 
 (defn validation
   "Validate a data structure, `t`,
-  against a normalized validation query/rule-set"
+  against a normalized validation query/rule-set
+  Note: By default everything is returned in a map, keyed by
+  the coordinate vector.  It is possible for validation results to be
+  stomped on."
   ([t normalized-query]
    ;; For some reason `doall` doesn't work here
    (apply hash-map (into [] (mapcat identity (validation-seq t normalized-query)))))
@@ -81,7 +84,7 @@
   (defn degrandis-pets [t-map data-point opt-map]
     (and (= (get-in t-map [:name :last]) "deGrandis")
          (:has-pet t-map)
-         {}))
+         nil))
 
   (def valid-paul [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
@@ -92,7 +95,7 @@
   (def paul-rules (query/normalize valid-paul))
   (validation-seq paul paul-rules)
   (validation paul paul-rules)
-  (validation paul paul-rules identity)
+  (mapcat identity (validation paul paul-rules (partial filter second)))
 
 )
 
