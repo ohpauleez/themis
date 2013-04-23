@@ -79,10 +79,13 @@
   (or vector of vectors);
   Ensure all validation functions are fully resolved"
   [validation-vec]
-  (map (fn [[coordinates validation]]
-         [(vectorize coordinates) (-> validation vectorize normalize-validation-fns)])
-       validation-vec))
-
+  (if (::normalized (meta validation-vec))
+    validation-vec
+    (with-meta
+      (map (fn [[coordinates validation]]
+             [(vectorize coordinates) (-> validation vectorize normalize-validation-fns)])
+           validation-vec)
+      {::normalized true})))
 
 (comment
  

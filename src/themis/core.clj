@@ -75,18 +75,19 @@
 
 (defn validation
   "Validate a data structure, `t`,
-  against a normalized validation query/rule-set
+  against validation query/rule-set.  The rule-set will be normalized if
+  it is not already.
   Note: By default everything is returned in a map, keyed by
   the coordinate vector.  Multiple validation results are conj'd together
   in a vector."
-  ([t normalized-query]
+  ([t rule-set]
    ;; TODO: This can definitely be done better
    (apply merge-with #(conj [%1] %2) ;; TODO: this will only work well for 1-2 validation rules, otherwise it'll nest
           (flatten (map (fn [result-seq]
                           (map #(apply hash-map %) (partition-all 2 result-seq)))
-                        (validation-seq t normalized-query)))))
-  ([t normalized-query merge-fn]
-   (merge-fn (validation-seq t normalized-query))))
+                        (validation-seq t (query/normalize rule-set))))))
+  ([t rule-set merge-fn]
+   (merge-fn (validation-seq t (query/normalize rule-set)))))
 
 (comment
 
@@ -101,15 +102,15 @@
          (:has-pet t-map)
          nil))
 
-  (def valid-paul [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
+  (def paul-rules [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0 0] [::w-pets {:pet-name-starts ""}
                                  (simple-predicate char?) {}]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
-  (def paul-rules (query/normalize valid-paul))
-  (validation-seq paul paul-rules)
+  (def normal-paul-rules (query/normalize paul-rules))
+  (validation-seq paul normal-paul-rules)
   (validation paul paul-rules)
   (mapcat identity (validation paul paul-rules (partial filter second)))
 
