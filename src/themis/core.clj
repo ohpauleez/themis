@@ -40,9 +40,12 @@
 
 (defn navigate
   "Fetch the data from within a data structure given coordinates.
+  If the data structure is not extended to Navigable, try `get-in`.
   Note: Tuck our internal protocols behind a function for consumption"
   [t coordinate-vec]
-  (protocols/-navigate t coordinate-vec))
+  (if (satisfies? protocols/Navigable t)
+    (protocols/-navigate t coordinate-vec)
+    (get-in t coordinate-vec)))
 
 (defn raw-validation
   "Create a response vector for a validation call,
