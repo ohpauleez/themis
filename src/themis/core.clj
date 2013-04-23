@@ -82,7 +82,7 @@
   in a vector."
   ([t rule-set]
    ;; TODO: This can definitely be done better
-   (apply merge-with #(conj [%1] %2) ;; TODO: this will only work well for 1-2 validation rules, otherwise it'll nest
+   (apply merge-with #(flatten (concat [%1] [%2]))
           (flatten (map (fn [result-seq]
                           (map #(apply hash-map %) (partition-all 2 result-seq)))
                         (validation-seq t (query/normalize rule-set))))))
@@ -105,7 +105,8 @@
   (def paul-rules [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0 0] [::w-pets {:pet-name-starts ""}
-                                 (simple-predicate char?) {}]]
+                                 (simple-predicate char?) {}
+                                 (simple-predicate #(= % \w))]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
