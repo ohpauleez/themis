@@ -6,12 +6,15 @@
 ;; -----------------
 
 (defn response
+  "Resolve and return a validator's response;
+  The value of :response in the opt-map, the response-data passed directly
+  to the `response` fn or the default return via *default-response*"
   ([response-data]
    (response response-data {}))
   ([response-data opt-map]
    (or (:response opt-map)
-        *default-response*
-        response-data)))
+        response-data
+        *default-response*)))
 
 (defn from-predicate
   "Given a  predicate function that takes a single arg,
@@ -50,10 +53,6 @@
   [t data-point opt-map]
   (when (nil? data-point)
     (response "required value is nil" opt-map)))
-
-(defn numeric
-  ""
-  [t data-point opt-map])
 
 (comment
   
