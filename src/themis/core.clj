@@ -68,10 +68,12 @@
 
 (defn validation-seq
   "Create a lazy sequence of validating a given data structure
-  against the a normalized validation rule-set vector/seq"
-  [t normalized-query]
-  (when (rules/balanced? normalized-query)
-    (mapcat #(validate-vec t %) normalized-query)))
+  against a validation rule-set vector/seq.
+  The resulting seq is of `(coordinate validation-result)` tuples/seq"
+  [t rule-set]
+  (let [normalized-rules (rules/normalize rule-set)]
+    (when (rules/balanced? normalized-rules)
+      (mapcat #(validate-vec t %) normalized-rules))))
 
 (defn validation
   "Validate a data structure, `t`,
@@ -85,9 +87,9 @@
    (apply merge-with #(flatten (concat [%1] [%2]))
           (mapcat (fn [result-seq]
                     (map #(apply hash-map %) (partition-all 2 result-seq)))
-                  (validation-seq t (rules/normalize rule-set)))))
+                  (validation-seq t rule-set))))
   ([t rule-set merge-fn]
-   (merge-fn (validation-seq t (rules/normalize rule-set)))))
+   (merge-fn (validation-seq t rule-set))))
 
 (comment
 
