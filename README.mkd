@@ -57,8 +57,11 @@ See this project's [wiki](https://github.com/ohpauleez/themis/wiki)
 
 Usage
 ------
+There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/)
 
-For now, see the [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L92)
+Also, see the temp [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L92)
+
+More examples to come in the wiki.
 
 License
 --------
