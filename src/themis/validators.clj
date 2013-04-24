@@ -1,9 +1,33 @@
 (ns themis.validators)
 
+;; Handling Responses
+;; -------------------
+;;
+;; Responses can come from three places:
+;;
+;;  * The `:response` value in an opt-map
+;;  * Some response passed into validator directly
+;;  * The value of `*default-response*`
+
+;; ### Why the `*default-response*`?
+;;
+;; Often times in validation, you want the base case to fit some
+;; representation.  Most often this is `nil`, but perhaps your application
+;; uses some special map as the default response/result from validation
+;;
+;; To allow you full control over the base case, you can bind on
+;; *default-response*
+;;
 (def ^:dynamic *default-response* nil)
 
 ;; Utility functions
 ;; -----------------
+;;
+;; One of the key benefits in Themis is being able to use all of
+;; Clojure's built-in functions as "validators"
+;;
+;; The following utility functions help to integrate common predicate
+;; functions and ease the handling of response data.
 
 (defn response
   "Resolve and return a validator's response;
@@ -33,9 +57,12 @@
      (when-not (apply f data-point arg-data (butlast more-data))
        (response (last more-data) {})))))
 
-
 ;; Validation functions
 ;; ---------------------
+;;
+;; These validation functions can be used directly within
+;; a rule set.  There is no need to wrap them using the utility
+;; functions above
 
 (defn required
   "Determine that the coordinate exists in the data structure"
