@@ -41,13 +41,15 @@
         *default-response*)))
 
 (defn from-predicate
-  "Given a  predicate function that takes a single arg,
+  "Given a predicate function that takes a single arg,
   return a proper validation function for it.
   You can also abuse this for predicates that take multiple arguments;
   The data-point arg is expected to be your first arg (otherwise you should
   just use partial)."
   ([f]
-   (simple-predicate f "invalid"))
+   (fn [_ data-point _]
+     (when-not (f data-point)
+       (response "invalid"))))
   ([f response-data]
    (fn [_ data-point _]
      (when-not (f data-point)
