@@ -11,7 +11,9 @@ Overview
    * Developed with `1.5.1` but should work down to `1.2`
  * Artifacts
   * Leiningen: `[ohpauleez/themis "0.1.0-beta1"]`
-  * Maven: ```
+  * Maven:
+
+```
 <dependency>
   <groupId>ohpauleez</groupId>
   <artifactId>themis</artifactId>
@@ -43,7 +45,7 @@ you want to package up the results of a full `validation`.
 When assumptions are made, there is always an escape hatch allowing
 you to modify the behavior to better suit your application needs.
 
-### Why the name `Themis`?
+### Why the name *Themis*?
 
 I was originally using `metis`, a validation library named after Zeus'
 first wife.  So, I naturally named mine after Zeus' second wife.
