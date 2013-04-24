@@ -102,13 +102,15 @@
          (:has-pet t-map)
          nil))
 
-  (require '[themis.validators :refer [simple-predicate]])
+  (require '[themis.validators :refer [from-predicate]])
+  (require '[themis.predicates :as preds])
 
   (def paul-rules [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
+                   [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]
                    [[:pets 0 0] [[::w-pets {:pet-name-starts ""}]
-                                 (simple-predicate char?)
-                                 (simple-predicate #(= % \w) "The first letter is not `w`")]]
+                                 (from-predicate char?)
+                                 (from-predicate #(= % \w) "The first letter is not `w`")]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
