@@ -1,0 +1,65 @@
+Themis
+=======
+
+A validation library for Clojure, born out of my experience trying to use
+other validation libraries.
+
+Overview
+---------
+
+ * Supported Clojure versions
+   * Developed with `1.5.1` but should work down to `1.2`
+ * Artifacts
+  * Leiningen: `[ohpauleez/themis "0.1.0-beta1"]`
+  * Maven: ```
+<dependency>
+  <groupId>ohpauleez</groupId>
+  <artifactId>themis</artifactId>
+  <version>0.1.0-beta1</version>
+</dependency>
+```
+
+### Why another validation library?
+
+1. The validation rule set should be expressed as data.
+   Rule sets should be able to completely serialize to EDN.
+2. Validators should always resolve to something that supports IFn.
+   The resolution of data to IFn-ables happens at validation time.
+3. Applying validation should be nothing more than applying functions
+   and seq'ing the results together.
+4. Validation is often domain specific, and the library should be open
+   for modification to easily adapt to different requirements.
+5. Validation results should not be conj'd/merge'd onto the original data
+   (unless the user specifically did that).
+6. Validation rule sets should allow for proper namespacing of
+   validators (symbols/functions/etc) and general data.
+
+### Assumptions and expectations
+
+Themis attempts to make no assumptions about the data structure you're
+validating, the results your validator functions return, or how
+you want to package up the results of a full `validation`.
+
+When assumptions are made, there is always an escape hatch allowing
+you to modify the behavior to better suit your application needs.
+
+### Why the name `Themis`?
+
+I was originally using `metis`, a validation library named after Zeus'
+first wife.  So, I naturally named mine after Zeus' second wife.
+
+### Where can I find more documentation
+
+See this project's [wiki](https://github.com/ohpauleez/themis/wiki)
+
+
+Usage
+------
+
+License
+--------
+
+Copyright © 2013 Paul deGrandis
+
+Distributed under the Eclipse Public License, the same as Clojure.
+
