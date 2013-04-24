@@ -58,6 +58,8 @@ See this project's [wiki](https://github.com/ohpauleez/themis/wiki)
 Usage
 ------
 
+For now, see the [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L92)
+
 License
 --------
 
