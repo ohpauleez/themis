@@ -53,7 +53,7 @@
   given the original data structure, the coordinates,
   the validation function, and the validation optional arg map"
   [t coordinate-vec validation-fn opt-map]
-  [coordinate-vec (validation-fn t (navigate t coordinate-vec) opt-map)])
+  [(get opt-map :return-coordinates coordinate-vec) (validation-fn t (navigate t coordinate-vec) opt-map)])
 
 (defn validate-vec
   "Given a single validation rule,
@@ -91,6 +91,7 @@
   ([t rule-set merge-fn]
    (merge-fn (validation-seq t rule-set))))
 
+
 (comment
 
   (def paul {:name {:first "Paul", :last "deGrandis"}
@@ -104,10 +105,11 @@
          (:has-pet t-map)
          nil))
 
-  (require '[themis.validators :refer [from-predicate]])
+  (require '[themis.validators :refer [from-predicate presence]])
   (require '[themis.predicates :as preds])
 
-  (def paul-rules [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point "Paul")
+  (def paul-rules [[[:name :first] [[presence {:response {:text "First name is not there"}}]
+                                    (fn [t-map data-point opt-map] (and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]
                    [[:pets 0 0] [[::w-pets {:pet-name-starts ""}]
@@ -117,10 +119,26 @@
                    [:* 'degrandis-pets]])
 
   (def normal-paul-rules (rules/normalize paul-rules))
-  (type (validation-seq paul normal-paul-rules))
+  (type (validation-seq paul paul-rules))
   (validation paul paul-rules)
   (mapcat identity (validation paul paul-rules (partial filter second)))
   (validation paul paul-rules (partial keep second))
+
+  (defn unfold-result
+    "Unfold the themis results map, expanding coordinates to nested maps,
+    and remove `nil` results"
+    [themis-result-map]
+    (reduce (fn [old [k-vec value]]
+              (let [validation-value (keep identity value)
+                    seqd-value (seq validation-value)] ;;remove nils if a seq
+                (if seqd-value
+                  (assoc-in old k-vec
+                            (if (sequential? value)
+                              (vec seqd-value)
+                              value))
+                  old)))
+            nil themis-result-map))
+  (unfold-result (validation paul paul-rules))
 
 )
 
