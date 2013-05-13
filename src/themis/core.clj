@@ -129,8 +129,8 @@
     and remove `nil` results"
     [themis-result-map]
     (reduce (fn [old [k-vec value]]
-              (let [validation-value (keep identity value)
-                    seqd-value (seq validation-value)] ;;remove nils if a seq
+              (let [validation-value (remove nil? value)
+                    seqd-value (not-empty validation-value)]
                 (if seqd-value
                   (assoc-in old k-vec
                             (if (sequential? value)
