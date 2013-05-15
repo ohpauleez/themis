@@ -53,7 +53,7 @@
   given the original data structure, the coordinates,
   the validation function, and the validation optional arg map"
   [t coordinate-vec validation-fn opt-map]
-  [(get opt-map :return-coordinates coordinate-vec) (validation-fn t (navigate t coordinate-vec) opt-map)])
+  [(get opt-map ::return-coordinates coordinate-vec) (validation-fn t (navigate t coordinate-vec) opt-map)])
 
 (defn validate-vec
   "Given a single validation rule,
