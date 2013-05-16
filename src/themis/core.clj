@@ -63,7 +63,7 @@
   (let [[coordinates validations] validation-vec]
     (partition-all 2
       (mapcat (fn [[validation-fn opt-map]]
-                (raw-validation t coordinates validation-fn (merge {::coordinates coordinates} opt-map)))
+                (raw-validation t coordinates validation-fn (assoc opt-map ::coordinates coordinates)))
               validations))))
 
 (defn validation-seq
@@ -75,22 +75,52 @@
     (when (rules/balanced? normalized-rules)
       (mapcat #(validate-vec t %) normalized-rules))))
 
-(defn validation
-  "Validate a data structure, `t`,
-  against validation query/rule-set.  The rule-set will be normalized if
-  it is not already.
-  Note: By default everything is returned in a map, keyed by
-  the coordinate vector.  Multiple validation results are conj'd together
-  in a vector."
-  ([t rule-set]
+(defn validation-seq->map
+  ""
+  [validation-seq]
    ;; TODO: This can definitely be done better
-   (apply merge-with #(flatten (concat [%1] [%2]))
+  (apply merge-with #(flatten (concat [%1] [%2]))
           (mapcat (fn [result-seq]
                     (map #(apply hash-map %) (partition-all 2 result-seq)))
-                  (validation-seq t rule-set))))
-  ([t rule-set merge-fn]
-   (merge-fn (validation-seq t rule-set))))
+                  validation-seq)))
 
+(defn validation
+  "Validate a data structure, `t`,
+  against validation query/rule-set.
+  The rule-set will be normalized if it is not already.
+  Note: By default everything is returned in a map, keyed by
+  the coordinate vector.
+  Multiple validation results are conj'd together in a vector.
+  You can optionally pass in a custom :merge-fn or :validation-seq-fn to process
+  the validation and tailor the results"
+  [t rule-set & opts]
+  (let [{:keys [merge-fn validation-seq-fn]} (merge {:merge-fn validation-seq->map
+                                                     :validation-seq-fn validation-seq}
+                                                    (apply hash-map opts))]
+    (merge-fn (validation-seq-fn t rule-set))))
+
+(defn pvalidation-seq
+  "Like `validation-seq`, but chunks rules based on the number of
+  available cores, and validates the chunks in parallel."
+  [t rule-set]
+  (let [normalized-rules (rules/normalize rule-set)
+        chunks (.availableProcessors (Runtime/getRuntime))
+        rule-count (count normalized-rules)
+        chunked-rules (vec (partition-all (/ rule-count chunks) normalized-rules))
+        validate-vec-fn #(validate-vec t %)]
+    (when (rules/balanced? normalized-rules)
+      (into [] (mapcat deref
+                       (map #(future (mapcat validate-vec-fn %))
+                            chunked-rules))))))
+
+(defn pvalidation
+  "Like `validation`, but will create the validation-seqs in parallel via
+  `pvalidation-seq` - which is based on the number of recognized cores.
+  Note: :validation-seq-fn is ignored in this call."
+  [t rule-set & {:keys [merge-fn]}]
+  (validation t rule-set
+              :validation-seq-fn pvalidation-seq
+              :merge-fn (or merge-fn validation-seq->map)))
 
 (comment
 
@@ -109,20 +139,24 @@
   (require '[themis.predicates :as preds])
 
   (def paul-rules [[[:name :first] [[presence {:response {:text "First name is not there"}}]
-                                    (fn [t-map data-point opt-map] (and (= data-point "Paul")
+                                    (fn [t-map data-point opt-map](Thread/sleep 500)(and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]
                    [[:pets 0 0] [[::w-pets {:pet-name-starts ""}]
                                  (from-predicate char?)
-                                 (from-predicate #(= % \w) "The first letter is not `w`")]]
+                                 (from-predicate #(or (Thread/sleep 200) (= % \w)) "The first letter is not `w`")]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
   (def normal-paul-rules (rules/normalize paul-rules))
   (type (validation-seq paul paul-rules))
-  (validation paul paul-rules)
-  (mapcat identity (validation paul paul-rules (partial filter second)))
-  (validation paul paul-rules (partial keep second))
+  (type (pvalidation-seq paul paul-rules))
+  (time (validation paul paul-rules))
+  (time (pvalidation paul paul-rules))
+  (= (validation paul paul-rules) (pvalidation paul paul-rules))
+  (mapcat identity (validation paul paul-rules :merge-fn (partial filter second)))
+  (validation paul paul-rules :merge-fn (partial keep second))
+  
 
   (defn unfold-result
     "Unfold the themis results map, expanding coordinates to nested maps,
