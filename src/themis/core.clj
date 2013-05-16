@@ -86,27 +86,18 @@
 
 (defn validation
   "Validate a data structure, `t`,
-  against validation query/rule-set.  The rule-set will be normalized if
-  it is not already.
+  against validation query/rule-set.
+  The rule-set will be normalized if it is not already.
   Note: By default everything is returned in a map, keyed by
-  the coordinate vector.  Multiple validation results are conj'd together
-  in a vector."
+  the coordinate vector.
+  Multiple validation results are conj'd together in a vector.
+  You can optionally pass in a custom :merge-fn or :validation-seq-fn to process
+  the validation and tailor the results"
   [t rule-set & opts]
   (let [{:keys [merge-fn validation-seq-fn]} (merge {:merge-fn validation-seq->map
                                                      :validation-seq-fn validation-seq}
                                                     (apply hash-map opts))]
     (merge-fn (validation-seq-fn t rule-set))))
-
-(defn split-equally [num coll] 
-  "Split a collection into a vector of (as close as possible) equally sized parts"
-  (loop [num num 
-         parts []
-         coll coll
-         c (count coll)]
-    (if (<= num 0)
-      parts
-      (let [t (quot (+ c num -1) num)]
-        (recur (dec num) (conj parts (take t coll)) (drop t coll) (- c t)))))) 
 
 (defn pvalidation-seq
   "Like `validation-seq`, but chunks rules based on the number of
@@ -114,15 +105,18 @@
   [t rule-set]
   (let [normalized-rules (rules/normalize rule-set)
         chunks (.availableProcessors (Runtime/getRuntime))
-        chunked-rules (remove empty? (split-equally chunks normalized-rules))
-       validate-vec-fn #(validate-vec t %)]
+        rule-count (count normalized-rules)
+        chunked-rules (vec (partition-all (/ rule-count chunks) normalized-rules))
+        validate-vec-fn #(validate-vec t %)]
     (when (rules/balanced? normalized-rules)
       (into [] (mapcat deref
                        (map #(future (mapcat validate-vec-fn %))
                             chunked-rules))))))
 
 (defn pvalidation
-  ""
+  "Like `validation`, but will create the validation-seqs in parallel via
+  `pvalidation-seq` - which is based on the number of recognized cores.
+  Note: :validation-seq-fn is ignored in this call."
   [t rule-set & {:keys [merge-fn]}]
   (validation t rule-set
               :validation-seq-fn pvalidation-seq
