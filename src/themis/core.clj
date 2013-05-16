@@ -1,6 +1,5 @@
 (ns themis.core
-  (require [clojure.core.reducers :as r]
-           [themis.protocols :as protocols]
+  (require [themis.protocols :as protocols]
            [themis.extended-protos :as e-protos]
            [themis.rules :as rules]))
 
@@ -67,8 +66,6 @@
                 (raw-validation t coordinates validation-fn (assoc opt-map ::coordinates coordinates)))
               validations))))
 
-(def ^:dynamic *mapper-fn* mapcat)
-
 (defn validation-seq
   "Create a lazy sequence of validating a given data structure
   against a validation rule-set vector/seq.
@@ -76,9 +73,16 @@
   [t rule-set]
   (let [normalized-rules (rules/normalize rule-set)]
     (when (rules/balanced? normalized-rules)
-      (*mapper-fn* #(validate-vec t %) normalized-rules))))
+      (mapcat #(validate-vec t %) normalized-rules))))
 
-(def ^:dynamic *validation-seq-fn* validation-seq)
+(defn validation-seq->map
+  ""
+  [validation-seq]
+   ;; TODO: This can definitely be done better
+  (apply merge-with #(flatten (concat [%1] [%2]))
+          (mapcat (fn [result-seq]
+                    (map #(apply hash-map %) (partition-all 2 result-seq)))
+                  validation-seq)))
 
 (defn validation
   "Validate a data structure, `t`,
@@ -87,28 +91,42 @@
   Note: By default everything is returned in a map, keyed by
   the coordinate vector.  Multiple validation results are conj'd together
   in a vector."
-  ([t rule-set]
-   ;; TODO: This can definitely be done better
-   (apply merge-with #(flatten (concat [%1] [%2]))
-          (mapcat (fn [result-seq] ;; TODO does this mapcat have to change when we go parallel
-                    (map #(apply hash-map %) (partition-all 2 result-seq)))
-                  (*validation-seq-fn* t rule-set))))
-  ([t rule-set merge-fn]
-   (merge-fn (validation-seq t rule-set))))
+  [t rule-set & opts]
+  (let [{:keys [merge-fn validation-seq-fn]} (merge {:merge-fn validation-seq->map
+                                                     :validation-seq-fn validation-seq}
+                                                    (apply hash-map opts))]
+    (merge-fn (validation-seq-fn t rule-set))))
 
-(defn pvalidation [t rule-set]
-  (binding [*validation-seq-fn* (fn [t rule-set]
-                                  (let [normalized-rules (rules/normalize rule-set)
-                                        chunks (.availableProcessors (Runtime/getRuntime))
-                                        chunked-rules (partition-all chunks normalized-rules)
-                                        _ (prn chunks)]
-                                    (when (rules/balanced? normalized-rules)
-                                      (r/mapcat deref
-                                                (r/map #(future (r/map
-                                                                  (fn [rule-vec]
-                                                                    (validate-vec t rule-vec)) %))
-                                                       chunked-rules)))))]
-    (validation t rule-set)))
+(defn split-equally [num coll] 
+  "Split a collection into a vector of (as close as possible) equally sized parts"
+  (loop [num num 
+         parts []
+         coll coll
+         c (count coll)]
+    (if (<= num 0)
+      parts
+      (let [t (quot (+ c num -1) num)]
+        (recur (dec num) (conj parts (take t coll)) (drop t coll) (- c t)))))) 
+
+(defn pvalidation-seq
+  "Like `validation-seq`, but chunks rules based on the number of
+  available cores, and validates the chunks in parallel."
+  [t rule-set]
+  (let [normalized-rules (rules/normalize rule-set)
+        chunks (.availableProcessors (Runtime/getRuntime))
+        chunked-rules (remove empty? (split-equally chunks normalized-rules))
+       validate-vec-fn #(validate-vec t %)]
+    (when (rules/balanced? normalized-rules)
+      (into [] (mapcat deref
+                       (map #(future (mapcat validate-vec-fn %))
+                            chunked-rules))))))
+
+(defn pvalidation
+  ""
+  [t rule-set & {:keys [merge-fn]}]
+  (validation t rule-set
+              :validation-seq-fn pvalidation-seq
+              :merge-fn (or merge-fn validation-seq->map)))
 
 (comment
 
@@ -127,21 +145,23 @@
   (require '[themis.predicates :as preds])
 
   (def paul-rules [[[:name :first] [[presence {:response {:text "First name is not there"}}]
-                                    (fn [t-map data-point opt-map](Thread/sleep 1000)(and (= data-point "Paul")
+                                    (fn [t-map data-point opt-map](Thread/sleep 500)(and (= data-point "Paul")
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]
                    [[:pets 0 0] [[::w-pets {:pet-name-starts ""}]
                                  (from-predicate char?)
-                                 (from-predicate #(or (Thread/sleep 2000) (= % \w)) "The first letter is not `w`")]]
+                                 (from-predicate #(or (Thread/sleep 200) (= % \w)) "The first letter is not `w`")]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
 
   (def normal-paul-rules (rules/normalize paul-rules))
   (type (validation-seq paul paul-rules))
+  (type (pvalidation-seq paul paul-rules))
   (time (validation paul paul-rules))
   (time (pvalidation paul paul-rules))
-  (mapcat identity (validation paul paul-rules (partial filter second)))
-  (validation paul paul-rules (partial keep second))
+  (= (validation paul paul-rules) (pvalidation paul paul-rules))
+  (mapcat identity (validation paul paul-rules :merge-fn (partial filter second)))
+  (validation paul paul-rules :merge-fn (partial keep second))
   
 
   (defn unfold-result
