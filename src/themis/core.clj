@@ -104,13 +104,13 @@
   available cores, and validates the chunks in parallel."
   [t rule-set]
   (let [normalized-rules (rules/normalize rule-set)
-        chunks (.availableProcessors (Runtime/getRuntime))
+        chunks (+ 2  (.. Runtime getRuntime availableProcessors))
         rule-count (count normalized-rules)
         chunked-rules (vec (partition-all (/ rule-count chunks) normalized-rules))
         validate-vec-fn #(validate-vec t %)]
     (when (rules/balanced? normalized-rules)
-      (into [] (mapcat deref
-                       (map #(future (mapcat validate-vec-fn %))
+      (into [] (apply concat
+                      (pmap #(mapcat validate-vec-fn %)
                             chunked-rules))))))
 
 (defn pvalidation
