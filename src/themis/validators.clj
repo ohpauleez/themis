@@ -100,8 +100,8 @@
   "Determine if the data-point is non-empty;
   If there is a non-empty value present at a specific coordinate."
   [t data-point opt-map]
-  (when-not (and (seqable? data-point)
-                 (seq data-point))
+  (when (and (seqable? data-point)
+             (empty? data-point))
     (response "required value is empty" opt-map)))
 
 (comment
