@@ -83,7 +83,14 @@
   (when (nil? data-point)
     (response "required value is nil" opt-map)))
 
+(defn non-empty
+  "Determine if the data-point is non-empty;
+  If there is a non-empty value present at a specific coordinate."
+  [t data-point opt-map]
+  (when-not (seq data-point)
+    (response "required value is empty" opt-map)))
+
 (comment
-  
+
   )
 
