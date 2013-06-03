@@ -87,7 +87,12 @@
   "Determine if the data-point is non-empty;
   If there is a non-empty value present at a specific coordinate."
   [t data-point opt-map]
-  (when-not (seq data-point)
+  (when-not (if (or (seq? data-point)
+                     (sequential? data-point)
+                     (string? data-point)
+                     (.startsWith (str (type data-point)) "class ["))
+              (seq data-point)
+              data-point)
     (response "required value is empty" opt-map)))
 
 (comment
