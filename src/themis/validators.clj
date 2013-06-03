@@ -83,14 +83,24 @@
   (when (nil? data-point)
     (response "required value is nil" opt-map)))
 
+;; Taken from an old contrib
+(defn- seqable?
+  "Returns true if (seq x) will succeed, false otherwise."
+  [x]
+  (or (sequential? x)
+      (coll? x)
+      (string? x)
+      (instance? clojure.lang.Seqable x)
+      (nil? x)
+      (instance? Iterable x)
+      (-> x .getClass .isArray)
+      (instance? java.util.Map x)))
+
 (defn non-empty
   "Determine if the data-point is non-empty;
   If there is a non-empty value present at a specific coordinate."
   [t data-point opt-map]
-  (when-not (if (or (seq? data-point)
-                     (sequential? data-point)
-                     (string? data-point)
-                     (.startsWith (str (type data-point)) "class ["))
+  (when-not (if (seqable? data-point)
               (seq data-point)
               data-point)
     (response "required value is empty" opt-map)))
