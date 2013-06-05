@@ -3028,7 +3028,7 @@ net.brehaut.ClojureTools = (function (SH) {
     build_tree: build_tree
   };
 })(SyntaxHighlighter);
-</script><title>ohpauleez/themis -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">ohpauleez/themis</h1><h2 class="project-version">0.1.0-beta1</h2><br /><p>A validation library for Clojure distilled from practice</p>
+</script><title>ohpauleez/themis -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">ohpauleez/themis</h1><h2 class="project-version">0.1.0-beta12</h2><br /><p>A validation library for Clojure distilled from practice</p>
 </div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.5.1</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#themis.core">themis.core</a></li><li><a href="#themis.extended-protos">themis.extended-protos</a></li><li><a href="#themis.predicates">themis.predicates</a></li><li><a href="#themis.protocols">themis.protocols</a></li><li><a href="#themis.rules">themis.rules</a></li><li><a href="#themis.validators">themis.validators</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#themis.core" name="themis.core"><h1 class="project-name">themis.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(ns themis.core
   (require [themis.protocols :as protocols]
@@ -3081,7 +3081,7 @@ first wife.  So, I naturally named mine after Zeus' second wife.</p>
   the validation function, and the validation optional arg map</p>
 </td><td class="codes"><pre class="brush: clojure">(defn raw-validation
   [t coordinate-vec validation-fn opt-map]
-  [coordinate-vec (validation-fn t (navigate t coordinate-vec) opt-map)])</pre></td></tr><tr><td class="docs"><p>Given a single validation rule,
+  [(get opt-map ::return-coordinates coordinate-vec) (validation-fn t (navigate t coordinate-vec) opt-map)])</pre></td></tr><tr><td class="docs"><p>Given a single validation rule,
   pull apart the constituents and apply a <code>raw-validation</code>,
   returning back the validation result vector</p>
 </td><td class="codes"><pre class="brush: clojure">(defn validate-vec
@@ -3089,27 +3089,63 @@ first wife.  So, I naturally named mine after Zeus' second wife.</p>
   (let [[coordinates validations] validation-vec]
     (partition-all 2
       (mapcat (fn [[validation-fn opt-map]]
-                (raw-validation t coordinates validation-fn (merge {::coordinates coordinates} opt-map)))
+                (raw-validation t coordinates validation-fn (assoc opt-map ::coordinates coordinates)))
               validations))))</pre></td></tr><tr><td class="docs"><p>Create a lazy sequence of validating a given data structure
-  against the a normalized validation rule-set vector/seq</p>
+  against a validation rule-set vector/seq.
+  The resulting seq is of <code>(coordinate validation-result)</code> tuples/seq</p>
 </td><td class="codes"><pre class="brush: clojure">(defn validation-seq
-  [t normalized-query]
-  (when (rules/balanced? normalized-query)
-    (mapcat #(validate-vec t %) normalized-query)))</pre></td></tr><tr><td class="docs"><p>Validate a data structure, <code>t</code>,
-  against validation query/rule-set.  The rule-set will be normalized if
-  it is not already.
-  Note: By default everything is returned in a map, keyed by
-  the coordinate vector.  Multiple validation results are conj'd together
-  in a vector.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn validation
-  ([t rule-set]
+  [t rule-set]
+  (let [normalized-rules (rules/normalize rule-set)]
+    (when (rules/balanced? normalized-rules)
+      (mapcat #(validate-vec t %) normalized-rules))))</pre></td></tr><tr><td class="docs"><p>Transform the results of a validation seq into a hashmap</p>
+</td><td class="codes"><pre class="brush: clojure">(defn validation-seq-&gt;map
+  [validation-seq]
    ;; TODO: This can definitely be done better
-   (apply merge-with #(flatten (concat [%1] [%2]))
+  (apply merge-with #(flatten (concat [%1] [%2]))
           (mapcat (fn [result-seq]
                     (map #(apply hash-map %) (partition-all 2 result-seq)))
-                  (validation-seq t (rules/normalize rule-set)))))
-  ([t rule-set merge-fn]
-   (merge-fn (validation-seq t (rules/normalize rule-set)))))</pre></td></tr><tr><td class="docs">
+                  validation-seq)))</pre></td></tr><tr><td class="docs"><p>Validate a data structure, <code>t</code>,
+  against validation query/rule-set.
+  The rule-set will be normalized if it is not already.
+  Note: By default everything is returned in a map, keyed by
+  the coordinate vector.
+  Multiple validation results are conj'd together in a vector.
+  You can optionally pass in a custom :merge-fn or :validation-seq-fn to process
+  the validation and tailor the results</p>
+</td><td class="codes"><pre class="brush: clojure">(defn validation
+  [t rule-set &amp; opts]
+  (let [{:keys [merge-fn validation-seq-fn]} (merge {:merge-fn validation-seq-&gt;map
+                                                     :validation-seq-fn validation-seq}
+                                                    (apply hash-map opts))]
+    (merge-fn (validation-seq-fn t rule-set))))</pre></td></tr><tr><td class="docs"><p><code>reckon</code> is <code>validation</code> by another name.
+            It exists only to make code using Themis as data generation more readable.
+            See also: <code>validation</code></p>
+</td><td class="codes"><pre class="brush: clojure">(def 
+  reckon validation)</pre></td></tr><tr><td class="docs"><p>Like <code>validation-seq</code>, but chunks rules based on the number of
+  available cores, and validates the chunks in parallel.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn pvalidation-seq
+  [t rule-set]
+  (let [normalized-rules (rules/normalize rule-set)
+        chunks (+ 2  (.. Runtime getRuntime availableProcessors))
+        rule-count (count normalized-rules)
+        chunked-rules (vec (partition-all (/ rule-count chunks) normalized-rules))
+        validate-vec-fn #(validate-vec t %)]
+    (when (rules/balanced? normalized-rules)
+      (into [] (apply concat
+                      (pmap #(mapcat validate-vec-fn %)
+                            chunked-rules))))))</pre></td></tr><tr><td class="docs"><p>Like <code>validation</code>, but will create the validation-seqs in parallel via
+  <code>pvalidation-seq</code> - which is based on the number of recognized cores.
+  Note: :validation-seq-fn is ignored in this call.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn pvalidation
+  [t rule-set &amp; {:keys [merge-fn]}]
+  (validation t rule-set
+              :validation-seq-fn pvalidation-seq
+              :merge-fn (or merge-fn validation-seq-&gt;map)))</pre></td></tr><tr><td class="docs"><p><code>preckon</code> is <code>pvalidation</code> by another name.
+            It exists only to make code using Themis as data generation more readable.
+            See also: <code>pvalidation</code></p>
+</td><td class="codes"><pre class="brush: clojure">(def 
+  preckon pvalidation)</pre></td></tr><tr><td class="docs"><p>Unfold the themis results map, expanding coordinates to nested maps,
+    and remove <code>nil</code> results</p>
 </td><td class="codes"><pre class="brush: clojure">(comment
   (def paul {:name {:first &quot;Paul&quot;, :last &quot;deGrandis&quot;}
              :has-pet true
@@ -3120,21 +3156,38 @@ first wife.  So, I naturally named mine after Zeus' second wife.</p>
     (and (= (get-in t-map [:name :last]) &quot;deGrandis&quot;)
          (:has-pet t-map)
          nil))
-  (require '[themis.validators :refer [from-predicate]])
+  (require '[themis.validators :refer [from-predicate presence]])
   (require '[themis.predicates :as preds])
-  (def paul-rules [[[:name :first] [(fn [t-map data-point opt-map] (and (= data-point &quot;Paul&quot;)
+  (def paul-rules [[[:name :first] [[presence {:response {:text &quot;First name is not there&quot;}}]
+                                    (fn [t-map data-point opt-map](Thread/sleep 500)(and (= data-point &quot;Paul&quot;)
                                                                         {:a 1 :b 2}))]]
                    [[:pets 0] [(from-predicate preds/longer-than? 20 &quot;Too short; Needs to be longer than 20&quot;)]]
                    [[:pets 0 0] [[::w-pets {:pet-name-starts }]
                                  (from-predicate char?)
-                                 (from-predicate #(= % \w) &quot;The first letter is not `w`&quot;)]]
+                                 (from-predicate #(or (Thread/sleep 200) (= % \w)) &quot;The first letter is not `w`&quot;)]]
                    ;[[:*] ['degrandis-pets]] ;This is valid, but we can also just write:
                    [:* 'degrandis-pets]])
   (def normal-paul-rules (rules/normalize paul-rules))
-  (type (validation-seq paul normal-paul-rules))
-  (validation paul paul-rules)
-  (mapcat identity (validation paul paul-rules (partial filter second)))
-  (validation paul paul-rules (partial keep second)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#themis.extended-protos" name="themis.extended-protos"><h1 class="project-name">themis.extended-protos</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
+  (type (validation-seq paul paul-rules))
+  (type (pvalidation-seq paul paul-rules))
+  (time (validation paul paul-rules))
+  (time (pvalidation paul paul-rules))
+  (= (validation paul paul-rules) (pvalidation paul paul-rules))
+  (mapcat identity (validation paul paul-rules :merge-fn (partial filter second)))
+  (validation paul paul-rules :merge-fn (partial keep second))
+  (defn unfold-result
+    [themis-result-map]
+    (reduce (fn [old [k-vec value]]
+              (let [validation-value (remove nil? value)
+                    seqd-value (not-empty validation-value)]
+                (if seqd-value
+                  (assoc-in old k-vec
+                            (if (sequential? value)
+                              (vec seqd-value)
+                              value))
+                  old)))
+            nil themis-result-map))
+  (unfold-result (validation paul paul-rules)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#themis.extended-protos" name="themis.extended-protos"><h1 class="project-name">themis.extended-protos</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(ns themis.extended-protos
   (:require [themis.protocols :as protocols]))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(extend-protocol protocols/Navigable
@@ -3146,10 +3199,11 @@ first wife.  So, I naturally named mine after Zeus' second wife.</p>
  clojure.lang.IPersistentMap
  (-navigate [t coordinate-vec]
    (get-in t coordinate-vec))
-  
-  java.lang.String
-  (-navigate [t coordinate-vec]
-    (get-in t coordinate-vec)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#themis.predicates" name="themis.predicates"><h1 class="project-name">themis.predicates</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
+
+  ;java.lang.String
+  ;(-navigate [t coordinate-vec]
+  ;  (get-in t coordinate-vec))
+  )</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#themis.predicates" name="themis.predicates"><h1 class="project-name">themis.predicates</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(ns themis.predicates)</pre></td></tr><tr><td class="docs"><h2>Predicates</h2>
 
 <p>It is often easier to reason about validtion composing smaller
@@ -3169,8 +3223,7 @@ validators</p>
    (length-between? t 0 high))
   ([t low high]
    (let [length (count t)]
-     (and (&gt;= length low)
-          (&lt;= length high)))))</pre></td></tr><tr><td class="docs">
+     (&lt;= low length high))))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn is-in? [t &amp; items]
   (and (some #{t} items)
        true))</pre></td></tr><tr><td class="docs">
@@ -3307,14 +3360,16 @@ functions and ease the handling of response data.</p>
   ([response-data opt-map]
    (or (:response opt-map)
         response-data
-        *default-response*)))</pre></td></tr><tr><td class="docs"><p>Given a  predicate function that takes a single arg,
+        *default-response*)))</pre></td></tr><tr><td class="docs"><p>Given a predicate function that takes a single arg,
   return a proper validation function for it.
   You can also abuse this for predicates that take multiple arguments;
   The data-point arg is expected to be your first arg (otherwise you should
   just use partial).</p>
 </td><td class="codes"><pre class="brush: clojure">(defn from-predicate
   ([f]
-   (simple-predicate f &quot;invalid&quot;))
+   (fn [_ data-point _]
+     (when-not (f data-point)
+       (response &quot;invalid&quot;))))
   ([f response-data]
    (fn [_ data-point _]
      (when-not (f data-point)
@@ -3340,8 +3395,26 @@ functions above</p>
 </td><td class="codes"><pre class="brush: clojure">(defn presence
   [t data-point opt-map]
   (when (nil? data-point)
-    (response &quot;required value is nil&quot; opt-map)))</pre></td></tr><tr><td class="docs">
+    (response &quot;required value is nil&quot; opt-map)))</pre></td></tr><tr><td class="docs"><p>Returns true if (seq x) will succeed, false otherwise.</p>
+
+<p>Taken from an old contrib</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- seqable?
+  [x]
+  (or (sequential? x)
+      (coll? x)
+      (string? x)
+      (instance? clojure.lang.Seqable x)
+      (nil? x)
+      (instance? Iterable x)
+      (-&gt; x .getClass .isArray)
+      (instance? java.util.Map x)))</pre></td></tr><tr><td class="docs"><p>Determine if the data-point is non-empty;
+  If there is a non-empty value present at a specific coordinate.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn non-empty
+  [t data-point opt-map]
+  (when (and (seqable? data-point)
+             (empty? data-point))
+    (response &quot;required value is empty&quot; opt-map)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(comment
-  
+
   )</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/fogus/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
        SyntaxHighlighter.all()</script></body></html>
