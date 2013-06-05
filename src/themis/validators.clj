@@ -41,13 +41,15 @@
         *default-response*)))
 
 (defn from-predicate
-  "Given a  predicate function that takes a single arg,
+  "Given a predicate function that takes a single arg,
   return a proper validation function for it.
   You can also abuse this for predicates that take multiple arguments;
   The data-point arg is expected to be your first arg (otherwise you should
   just use partial)."
   ([f]
-   (simple-predicate f "invalid"))
+   (fn [_ data-point _]
+     (when-not (f data-point)
+       (response "invalid"))))
   ([f response-data]
    (fn [_ data-point _]
      (when-not (f data-point)
@@ -81,7 +83,28 @@
   (when (nil? data-point)
     (response "required value is nil" opt-map)))
 
+;; Taken from an old contrib
+(defn- seqable?
+  "Returns true if (seq x) will succeed, false otherwise."
+  [x]
+  (or (sequential? x)
+      (coll? x)
+      (string? x)
+      (instance? clojure.lang.Seqable x)
+      (nil? x)
+      (instance? Iterable x)
+      (-> x .getClass .isArray)
+      (instance? java.util.Map x)))
+
+(defn non-empty
+  "Determine if the data-point is non-empty;
+  If there is a non-empty value present at a specific coordinate."
+  [t data-point opt-map]
+  (when (and (seqable? data-point)
+             (empty? data-point))
+    (response "required value is empty" opt-map)))
+
 (comment
-  
+
   )
 

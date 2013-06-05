@@ -23,8 +23,7 @@
    (length-between? t 0 high))
   ([t low high]
    (let [length (count t)]
-     (and (>= length low)
-          (<= length high)))))
+     (<= low length high))))
 
 (defn is-in? [t & items]
   (and (some #{t} items)
