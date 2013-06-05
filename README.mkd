@@ -98,7 +98,7 @@ See this project's [wiki](https://github.com/ohpauleez/themis/wiki)
 
 Usage
 ------
-There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/) and the [API docs](#)
+There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/) and the [API docs](http://ohpauleez.github.io/themis/api/)
 
 Also, see the temp [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L136)
 
