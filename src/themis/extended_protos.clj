@@ -10,8 +10,9 @@
  clojure.lang.IPersistentMap
  (-navigate [t coordinate-vec]
    (get-in t coordinate-vec))
-  
-  java.lang.String
-  (-navigate [t coordinate-vec]
-    (get-in t coordinate-vec)))
+
+  ;java.lang.String
+  ;(-navigate [t coordinate-vec]
+  ;  (get-in t coordinate-vec))
+  )
 

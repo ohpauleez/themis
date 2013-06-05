@@ -1,25 +1,66 @@
 Themis
 =======
 
-A validation library for Clojure, born out of my experience trying to use
+A data structure processing library - validation, response or message generation, etc.
+
+It started life as a validation library for Clojure, born out of my experience trying to use
 other validation libraries.
 
 Overview
 ---------
 
+For the latest release information, please see the [Clojars entry](https://clojars.org/ohpauleez/themis)
+
  * Supported Clojure versions
    * Developed with `1.5.1` but should work down to `1.2`
- * Artifacts
-  * Leiningen: `[ohpauleez/themis "0.1.0-beta1"]`
-  * Maven:
 
+### Artifacts
+If you are using Maven, add the following repository
+definition to your `pom.xml`:
+
+``` xml
+<repository>
+  <id>clojars.org</id>
+  <url>http://clojars.org/repo</url>
+</repository>
 ```
+
+**The Most Recent Release**
+
+With [Leiningen](http://leiningen.org):
+
+``` clojure
+[ohpauleez/themis "0.1.0-beta12"]
+```
+
+With Maven:
+
+``` xml
 <dependency>
   <groupId>ohpauleez</groupId>
   <artifactId>themis</artifactId>
-  <version>0.1.0-beta1</version>
+  <version>0.1.0-beta12</version>
 </dependency>
 ```
+
+### Project goals
+
+Themis aims to provide a way to process data structures and dispatch actions
+based on the data within a data structure.
+
+[Prismatic's graph](https://github.com/Prismatic/plumbing) offers a way to specify
+and structure computations.  I am more often faced with a scenario that I'm
+handed a specifc piece of data (say, a hash-map), and need to perform specific
+actions with individual pieces of that data structure.  Usually those actions
+are unrelated and I'd like to perform them in parallel.
+
+One instance of this is validation.  It is also sometimes the case that validation
+goes beyond syntactic checks (ie: a string is of a certain length), and pushes into
+semantic validation (ie: the address you are modeling is a real address).
+In many cases, semantic validation requires calling a third party service or library.
+
+I wrote Themis first as a validation library, and later found it useful for generating
+response messages and data.  I use the term "validation" very loosely throughout this README.
 
 ### Why another validation library?
 
@@ -57,9 +98,9 @@ See this project's [wiki](https://github.com/ohpauleez/themis/wiki)
 
 Usage
 ------
-There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/)
+There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/) and the [API docs](#)
 
-Also, see the temp [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L92)
+Also, see the temp [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L136)
 
 More examples to come in the wiki.
 

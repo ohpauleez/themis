@@ -76,7 +76,7 @@
       (mapcat #(validate-vec t %) normalized-rules))))
 
 (defn validation-seq->map
-  ""
+  "Transform the results of a validation seq into a hashmap"
   [validation-seq]
    ;; TODO: This can definitely be done better
   (apply merge-with #(flatten (concat [%1] [%2]))
@@ -98,6 +98,11 @@
                                                      :validation-seq-fn validation-seq}
                                                     (apply hash-map opts))]
     (merge-fn (validation-seq-fn t rule-set))))
+
+(def ^{:doc "`reckon` is `validation` by another name.
+            It exists only to make code using Themis as data generation more readable.
+            See also: `validation`"}
+  reckon validation)
 
 (defn pvalidation-seq
   "Like `validation-seq`, but chunks rules based on the number of
@@ -121,6 +126,12 @@
   (validation t rule-set
               :validation-seq-fn pvalidation-seq
               :merge-fn (or merge-fn validation-seq->map)))
+
+(def ^{:doc "`preckon` is `pvalidation` by another name.
+            It exists only to make code using Themis as data generation more readable.
+            See also: `pvalidation`"}
+  preckon pvalidation)
+
 
 (comment
 
@@ -156,7 +167,7 @@
   (= (validation paul paul-rules) (pvalidation paul paul-rules))
   (mapcat identity (validation paul paul-rules :merge-fn (partial filter second)))
   (validation paul paul-rules :merge-fn (partial keep second))
-  
+
 
   (defn unfold-result
     "Unfold the themis results map, expanding coordinates to nested maps,
