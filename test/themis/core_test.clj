@@ -16,7 +16,7 @@
     (testing "Bob's name should not be Alice."
       (is (not= (core/validation {:name "Bob"} alice-rules) {[:name] nil})))))
 
-(deftest pauls-tests
+(deftest paul-tests
   "These are selected tests are ported from Paul DeGrandis' comment tests."
   (let [paul {:name {:first "Paul", :last "deGrandis"}
               :has-pet true
@@ -25,10 +25,10 @@
                                      (fn [t-map data-point opt-map](Thread/sleep 500)(and (= data-point "Paul")
                                                                                           {:a 1 :b 2}))]]
                     [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]]
-        paul-validation {[:name :first]  '(nil  {:a 1, :b 2}), [:pets 0] "Too short; Needs to be longer than 20"}]
+        paul-expected-validation {[:name :first]  '(nil  {:a 1, :b 2}), [:pets 0] "Too short; Needs to be longer than 20"}]
     (testing "Does validation work on paul-rules?"
       (is (= (core/validation paul paul-rules)
-             paul-validation)))
+             paul-expected-validation)))
     (testing "Does pvalidation work on paul-rules?"
       (is (= (core/pvalidation paul paul-rules)
-             paul-validation)))))
+             paul-expected-validation)))))
