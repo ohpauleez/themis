@@ -24,7 +24,11 @@
         paul-rules [[[:name :first] [[presence {:response {:text "First name is not there"}}]
                                      (fn [t-map data-point opt-map](Thread/sleep 500)(and (= data-point "Paul")
                                                                                           {:a 1 :b 2}))]]
-                    [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]]]
+                    [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]]
+        paul-validation {[:name :first]  '(nil  {:a 1, :b 2}), [:pets 0] "Too short; Needs to be longer than 20"}]
     (testing "Does validation work on paul-rules?"
       (is (= (core/validation paul paul-rules)
-             {[:name :first]  '(nil  {:a 1, :b 2}), [:pets 0] "Too short; Needs to be longer than 20"})))))
+             paul-validation)))
+    (testing "Does pvalidation work on paul-rules?"
+      (is (= (core/pvalidation paul paul-rules)
+             paul-validation)))))
