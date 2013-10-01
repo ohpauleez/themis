@@ -10,7 +10,6 @@
                       (fn [_payload value opts]
                         (when (not= value "Alice")
                           {:error ":name not Alice"}))]]]
-
     (testing "Alice's name should be Alice."
       (is (= (core/validation alice alice-rules) {[:name] nil})))
     (testing "Bob's name should not be Alice."
@@ -21,11 +20,13 @@
   (let [paul {:name {:first "Paul", :last "deGrandis"}
               :has-pet true
               :pets ["walter"]}
-        paul-rules [[[:name :first] [[presence {:response {:text "First name is not there"}}]
+        paul-rules [[[:name :first]
+                     [[presence {:response {:text "First name is not there"}}]
                                      (fn [t-map data-point opt-map](Thread/sleep 500)(and (= data-point "Paul")
                                                                                           {:a 1 :b 2}))]]
-                    [[:pets 0] [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]]
-        paul-expected-validation {[:name :first]  '(nil  {:a 1, :b 2}), [:pets 0] "Too short; Needs to be longer than 20"}]
+                    [[:pets 0]
+                     [(from-predicate preds/longer-than? 20 "Too short; Needs to be longer than 20")]]]
+        paul-expected-validation {[:name :first] '(nil  {:a 1, :b 2}), [:pets 0] "Too short; Needs to be longer than 20"}]
     (testing "Does validation work on paul-rules?"
       (is (= (core/validation paul paul-rules)
              paul-expected-validation)))
