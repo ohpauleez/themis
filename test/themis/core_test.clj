@@ -32,6 +32,13 @@
     (is (= (get (validation (assoc paul :has-pet false) paul-rules) [:*])
            (get (validation (assoc paul :has-pet false) (assoc paul-rules 1 [:multi_ degrandis-pets])) [:multi_])
           :no-degrandis-pets-found)))
+  (testing "with :merge-fn option transforms how the validation seq is returned"
+    (is (= (validation paul paul-rules :merge-fn (partial keep second))
+          '({:error "You are Paul!"}))))
+  (testing "with a :return-coordinates option places return value on specified coordinate"
+    (let [rules-with-option (assoc paul-rules 1 [:* [[degrandis-pets {:themis.core/return-coordinates [:pets]}]]])]
+      (is (= (validation (assoc paul :has-pet false) rules-with-option)
+             {[:pets] :no-degrandis-pets-found, [:name :first] '(nil {:error "You are Paul!"})}))))
   (testing "pvalidation and validation should validate the same"
     (is (= (validation (assoc paul :has-pet false) paul-rules)
            (pvalidation (assoc paul :has-pet false) paul-rules)))))
