@@ -59,6 +59,13 @@
      (when-not (apply f data-point arg-data (butlast more-data))
        (response (last more-data) {})))))
 
+(defn weak-predicate
+  "Given a predicate function that takes a single arg,
+  return a proper validator for it, that is also accepts
+  nil (non-present) values"
+  ([f & args]
+   (apply from-predicate (some-fn nil? f) args)))
+
 ;; Validation functions
 ;; ---------------------
 ;;
@@ -104,7 +111,12 @@
              (empty? data-point))
     (response "required value is empty" opt-map)))
 
-(comment
+(defn hard-presence
+  "Required, Present, and Non-empty"
+  [t data-point opt-map]
+  (when (or (required t data-point opt-map)
+            (presence t data-point opt-map)
+            (non-empty t data-point opt-map))
+    (response "required coordinate/value is not present or is empty" opt-map)))
 
-  )
 

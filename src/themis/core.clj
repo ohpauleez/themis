@@ -132,6 +132,20 @@
             See also: `pvalidation`"}
   preckon pvalidation)
 
+(defn unfold-result
+    "Unfold the themis results map, expanding coordinates to nested maps,
+    and remove `nil` results"
+    [themis-result-map]
+    (reduce (fn [old [k-vec value]]
+              (let [validation-value (remove nil? value)
+                    seqd-value (not-empty validation-value)]
+                (if seqd-value
+                  (assoc-in old k-vec
+                            (if (sequential? value)
+                              (vec seqd-value)
+                              value))
+                  old)))
+            nil themis-result-map))
 
 (comment
 
@@ -167,22 +181,6 @@
   (= (validation paul paul-rules) (pvalidation paul paul-rules))
   (mapcat identity (validation paul paul-rules :merge-fn (partial filter second)))
   (validation paul paul-rules :merge-fn (partial keep second))
-
-
-  (defn unfold-result
-    "Unfold the themis results map, expanding coordinates to nested maps,
-    and remove `nil` results"
-    [themis-result-map]
-    (reduce (fn [old [k-vec value]]
-              (let [validation-value (remove nil? value)
-                    seqd-value (not-empty validation-value)]
-                (if seqd-value
-                  (assoc-in old k-vec
-                            (if (sequential? value)
-                              (vec seqd-value)
-                              value))
-                  old)))
-            nil themis-result-map))
   (unfold-result (validation paul paul-rules))
 
 )
