@@ -1,0 +1,107 @@
+# Themis
+
+Themis is built to process data structures, be it for validation, response
+generation, a system dispatching.
+
+Data validation is the most common use.  This document will walk you through
+using Themis to validate a data structure and generate a new data structure
+based on the results of validation.
+
+The example will specifically validate a hash-map, but any data structure that
+is participates with Themis' navigation protocol will work.
+
+
+## Beginner Example
+
+Themis validates a data structure, usually a map, with a given validation
+ruleset. A basic example:
+
+```clj
+(defn required-field
+  [payload data-point options]
+  (when (empty? data-point)
+     {:error "Field is required"}))
+
+(def person {:name "Bob" :age 20})
+(def rules [[:name [required-field]]]])
+
+(themis.core/validation (dissoc person :name) rules)
+; => {[:name] {:error "Field is required"}}
+
+(themis.core/validation person rules)
+; => nil
+```
+
+As you can see, rules are a vectors of subvectors. Each subvector is in the format
+`[:coordinate [validation-fn1 validation-fn2 ...]]`.
+
+Note `:coordinate` is `:name` in this example. However a `:coordinate` can also be a vector. For
+example, if you wanted to put a rule on the first name of `{:name {:first "Bob"}}`, the coordinates
+would be `[:name :first]`.
+
+`required-field` is a validation fn. All themis validation fns _must_ take three arguments:
+
+* The first argument, `payload`, is the whole data structure being validated. In this case it would be
+  the person map.
+* The second argument, `data-point`, is the value of the payload at that key/coordinate. In the examples above,
+  those values would be nil and "Bob".
+* The third argument, `options`, is an options map. By default, themis provides the current
+  key/coordinate being validated on e.g. `{:themis.core/coordinates [:name]}`. See
+  [Extras](#extras) for more.
+
+## Intermediate Example
+
+Now that you know about themis rules and validation fns, let's look at an example with more than one
+validation fn:
+
+```clj
+;; Additional validation fn
+(defn ensure-price-for-certain-upcs
+  [payload data-point options]
+  (let [{:keys [price upc_code] payload]
+    (when (and (upc_code (.startsWith upc_code "A") (< price 100)))
+      {:error "Upc A* must at least be $100"}))
+
+(def item {:upc_code "A23C" :price 200.00})
+(def rules [[:upc_code [required-field]]
+            [:* [ensure-price-for-certain-upcs]])
+
+(themis.core/validation (assoc item :price 40.00) rules)
+; => {[:*] {:error "Upc A* must at least be $100"}}
+
+(themis.core/validation item rules)
+; => nil
+```
+
+In this example, `ensure-price-for-certain-upcs` is a validation fn that uses the first argument, the
+whole payload, instead of just one value. For this validation, `:*` is only being used to report
+the error back on that key. Themis is _agnostic_ to the coordinates for validations.  You may use
+whatever general key you want, such as `:all` or `:multi`, but it must not match an existing key/coordinate
+in the data structure.
+
+## Validators
+
+Themis comes with validations and validation builders in `themis.validators`. For example,
+`validators/required` checks for presence on the given coordinate, and
+`validators/hard-presence` for a coordinate with a non-nil/non-empty value.
+
+Validation builders are functions which given arguments will generate a validation. One such handy
+builder is `validators/from-predicate`. Given a function and an error response, it will apply the
+function to the current coordinate value. One may use this to build up domain specific validators.
+
+## Extras
+
+These are a list of useful things to know about themis in no particular order:
+
+* You can pass options (3rd argument) to validation fns in the rules.
+  The format for a single validation with options is
+  `[validation-fn options-map]`. Thus in a rule it would look like: `[[:coordinate [[validation-fn
+  options-map] validation-fn2]]]`.
+* To run rules in parallel, themis provides `themis.core/pvalidation`.
+* You may use the function `reckon` and `preckon` in place of `validation` and `pvalidation`
+  if that makes more sense in your application (ie: if you're not directly doing validation)
+* When declaring multiple validation fns for a coordinate, themis will run _all_ of them. Therefore,
+  when writing validation fns don't assume anything about your data e.g. it's a vector or a string
+  unless it has already been validated in a previous function.
+* See [themis tests](https://github.com/ohpauleez/themis/blob/master/test/themis/core_test.clj) for examples of additional abilities themis has.
+
