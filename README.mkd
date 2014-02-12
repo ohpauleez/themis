@@ -93,21 +93,22 @@ first wife.  So, I naturally named mine after Zeus' second wife.
 
 ### Where can I find more documentation
 
-See this project's [wiki](https://github.com/ohpauleez/themis/wiki)
+See this project's [guide](https://github.com/ohpauleez/themis/blob/master/guide.mkd)
 
 
 Usage
 ------
-There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/) and the [API docs](http://ohpauleez.github.io/themis/api/)
+There is a lot covered in the [Marginalia docs](http://ohpauleez.github.io/themis/),
+[API docs](http://ohpauleez.github.io/themis/api/),
+and in the [guide](https://github.com/ohpauleez/themis/blob/master/guide.mkd).
 
-Also, see the temp [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L136)
+Also, see the [embedded examples](https://github.com/ohpauleez/themis/blob/master/src/themis/core.clj#L150)
 
-More examples to come in the wiki.
 
 License
 --------
 
-Copyright © 2013 Paul deGrandis
+Copyright © 2014 Paul deGrandis
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
