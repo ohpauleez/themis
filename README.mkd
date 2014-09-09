@@ -30,7 +30,7 @@ definition to your `pom.xml`:
 With [Leiningen](http://leiningen.org):
 
 ``` clojure
-[ohpauleez/themis "0.1.0-beta12"]
+[ohpauleez/themis "0.1.1"]
 ```
 
 With Maven:
@@ -39,7 +39,7 @@ With Maven:
 <dependency>
   <groupId>ohpauleez</groupId>
   <artifactId>themis</artifactId>
-  <version>0.1.0-beta12</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
