@@ -1,7 +1,7 @@
 (ns themis.core
-  (require [themis.protocols :as protocols]
-           [themis.extended-protos :as e-protos]
-           [themis.rules :as rules]))
+  (:require [themis.protocols :as protocols]
+            [themis.extended-protos :as e-protos]
+            [themis.rules :as rules]))
 
 ;; Themis
 ;; ---------

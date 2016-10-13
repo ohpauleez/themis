@@ -1,4 +1,4 @@
-(defproject ohpauleez/themis "0.1.1"
+(defproject ohpauleez/themis "0.1.2"
   :description "A validation library for Clojure distilled from practice"
   :url "https://github.com/ohpauleez/themis"
   :license {:name "Eclipse Public License"
